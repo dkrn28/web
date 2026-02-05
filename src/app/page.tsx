@@ -122,47 +122,64 @@ export default function AquablissHome() {
   ]
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+  e.preventDefault()
+  setIsSubmitting(true)
 
-    try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        toast({
-          title: 'Message Sent Successfully',
-          description: 'Our team will contact you within 2 hours.',
-          variant: 'default',
-        })
-        setFormData({ name: '', email: '', phone: '', service: '', message: '' })
-      } else {
-        throw new Error(data.error || 'Failed to send message')
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to send message. Please call us directly.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsSubmitting(false)
+  try {
+    // Import and initialize EmailJS
+    const { default: emailjs } = await import('@emailjs/browser')
+    emailjs.init('OfIHUHhPErJDPnAWy')
+    
+    // Prepare template parameters
+    const templateParams = {
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      service: formData.service.trim(),
+      message: formData.message.trim(),
     }
-  }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
+    console.log('Sending email...', templateParams)
+
+    // Send email directly via EmailJS
+    const response = await emailjs.send(
+      'service_xlhrzl5',
+      'template_usgg5ny',
+      templateParams
+    )
+
+    console.log('EmailJS response:', response)
+
+    if (response.status === 200) {
+      toast({
+        title: 'Message Sent Successfully! 🎉',
+        description: 'Our team will contact you within 2 hours.',
+        variant: 'default',
+      })
+      setFormData({ name: '', email: '', phone: '', service: '', message: '' })
+    } else {
+      throw new Error(`Status: ${response.status}`)
+    }
+  } catch (error: any) {
+    console.error('EmailJS error:', error)
+    
+    let errorMsg = 'Failed to send message. Please call +380 50 777 33 99'
+    
+    if (error.text) {
+      errorMsg = error.text
+    } else if (error.message) {
+      errorMsg = error.message
+    }
+    
+    toast({
+      title: 'Error ❌',
+      description: errorMsg,
+      variant: 'destructive',
+    })
+  } finally {
+    setIsSubmitting(false)
   }
+}
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white">
